@@ -777,7 +777,7 @@ function closerHTML(d) {
 function buildS1(d, date, subj) {
   const mo = date ? new Date(date).toLocaleDateString("en-US", { month: "long", year: "numeric" }) : "This Month";
   const recipe = d.recipe || {};
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8">${FONTS}</head><body style="margin:0;padding:0;background:#f5f5f0;">
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><base target="_blank">${FONTS}</head><body style="margin:0;padding:0;background:#f5f5f0;">
 <!-- Subject: ${subj?.subject || ''} | Preview: ${subj?.preview || ''} -->
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f0;"><tr><td align="center" style="padding:32px 16px;">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#fffae8;max-width:600px;">
@@ -838,7 +838,7 @@ function buildS2(d, date, subj) {
   const wbg = PILLAR_BG[d.watchPillar] || B.charcoal;
   const ckmBody = (d.ckmCopy || "").split(/\n\n+/).map(p => `<p style="font-family:'Frank Ruhl Libre',serif;font-weight:300;font-size:17px;color:#555;line-height:1.75;margin:0 0 14px 0;">${p.replace(/\n/g, ' ')}</p>`).join("");
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8">${FONTS}</head><body style="margin:0;padding:0;background:#f5f5f0;">
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><base target="_blank">${FONTS}</head><body style="margin:0;padding:0;background:#f5f5f0;">
 <!-- Subject: ${subj?.subject || ''} | Preview: ${subj?.preview || ''} -->
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f0;"><tr><td align="center" style="padding:32px 16px;">
 <table width="600" cellpadding="0" cellspacing="0" style="background:#fffae8;max-width:600px;">
