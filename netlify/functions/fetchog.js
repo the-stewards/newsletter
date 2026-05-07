@@ -10,9 +10,16 @@ exports.handler = async function (event) {
   }
 
   try {
-    const { url } = JSON.parse(event.body);
+    let { url } = JSON.parse(event.body);
     if (!url || !url.startsWith("http")) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid URL" }) };
+    }
+
+    // ── Dubb: normalize embed URLs to direct page URL ────────────────────────
+    // embed: dubb.com/v/hutmE6/embed?... → dubb.com/v/hutmE6
+    const dubbEmbedMatch = url.match(/dubb\.com\/v\/([a-zA-Z0-9_-]+)\/embed/);
+    if (dubbEmbedMatch) {
+      url = `https://dubb.com/v/${dubbEmbedMatch[1]}`;
     }
 
     // ── YouTube shortcut — no scraping needed ────────────────────────────────
@@ -21,10 +28,7 @@ exports.handler = async function (event) {
     );
     if (ytMatch) {
       const videoId = ytMatch[1];
-      // maxresdefault is highest quality; fall back to hqdefault if missing
       const ogImage = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-
-      // Still fetch the page to get the title
       let ogTitle = null;
       try {
         const r = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
@@ -38,7 +42,6 @@ exports.handler = async function (event) {
           if (ogMatch) ogTitle = ogMatch[1];
         }
       } catch (_) {}
-
       return {
         statusCode: 200,
         headers: { ...headers, "Content-Type": "application/json" },
@@ -57,15 +60,17 @@ exports.handler = async function (event) {
 
     const html = await response.text();
 
-    const get = (property) => {
-      const patterns = [
-        new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"),
-        new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`, "i"),
-        new RegExp(`<meta[^>]+name=["']${property.replace("og:", "")}["'][^>]+content=["']([^"']+)["']`, "i"),
-      ];
-      for (const pattern of patterns) {
-        const match = html.match(pattern);
-        if (match) return match[1].trim();
+    const get = (...properties) => {
+      for (const property of properties) {
+        const patterns = [
+          new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"),
+          new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`, "i"),
+          new RegExp(`<meta[^>]+name=["']${property.replace("og:", "")}["'][^>]+content=["']([^"']+)["']`, "i"),
+        ];
+        for (const pattern of patterns) {
+          const match = html.match(pattern);
+          if (match) return match[1].trim();
+        }
       }
       return null;
     };
@@ -77,7 +82,8 @@ exports.handler = async function (event) {
       statusCode: 200,
       headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({
-        ogImage: get("og:image"),
+        // Try og:image:url first (Dubb), then standard og:image
+        ogImage: get("og:image:url", "og:image"),
         ogTitle: get("og:title") || fallbackTitle,
         ogDescription: get("og:description"),
       }),
