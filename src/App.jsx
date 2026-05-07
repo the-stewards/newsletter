@@ -17,27 +17,14 @@ const FROM_PROMPTS = [
 const PILLAR_BG = { Keep: "#403d3d", Create: "#f76732", Multiply: "#555" };
 const STORAGE_KEY = "steward_newsletter_v7";
 
-// ── CLAUDE API — works in browser on Netlify ─────────────────────────────────
+// ── CLAUDE API — proxied via Netlify function to avoid CORS ──────────────────
 async function claude(prompt, maxTokens = 800) {
-  // In artifact environment the key is injected automatically.
-  // On Netlify it reads from the VITE_ env var.
-  const apiKey =
-    (typeof import.meta !== "undefined" && import.meta.env?.VITE_ANTHROPIC_API_KEY) ||
-    "";
-
-  const headers = {
-    "Content-Type": "application/json",
-    "anthropic-version": "2023-06-01",
-    "anthropic-dangerous-allow-browser": "true",
-  };
-  if (apiKey) headers["x-api-key"] = apiKey;
-
   try {
-    const r = await fetch("https://api.anthropic.com/v1/messages", {
+    const r = await fetch("/.netlify/functions/claude", {
       method: "POST",
-      headers,
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-sonnet-4-20250514",
+        model: "claude-opus-4-5",
         max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }],
       }),
