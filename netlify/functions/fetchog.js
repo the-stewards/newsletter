@@ -15,10 +15,40 @@ exports.handler = async function (event) {
       return { statusCode: 400, headers, body: JSON.stringify({ error: "Invalid URL" }) };
     }
 
+    // ── YouTube shortcut — no scraping needed ────────────────────────────────
+    const ytMatch = url.match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+    );
+    if (ytMatch) {
+      const videoId = ytMatch[1];
+      // maxresdefault is highest quality; fall back to hqdefault if missing
+      const ogImage = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+      // Still fetch the page to get the title
+      let ogTitle = null;
+      try {
+        const r = await fetch(`https://www.youtube.com/watch?v=${videoId}`, {
+          headers: { "User-Agent": "Mozilla/5.0 (compatible; NewsletterBuilder/1.0)" },
+        });
+        const html = await r.text();
+        const titleMatch = html.match(/"title":\{"runs":\[\{"text":"([^"]+)"/);
+        if (titleMatch) ogTitle = titleMatch[1];
+        if (!ogTitle) {
+          const ogMatch = html.match(/<meta property="og:title" content="([^"]+)"/);
+          if (ogMatch) ogTitle = ogMatch[1];
+        }
+      } catch (_) {}
+
+      return {
+        statusCode: 200,
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({ ogImage, ogTitle, ogDescription: null }),
+      };
+    }
+
+    // ── General OG scraper ───────────────────────────────────────────────────
     const response = await fetch(url, {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (compatible; NewsletterBuilder/1.0)",
-      },
+      headers: { "User-Agent": "Mozilla/5.0 (compatible; NewsletterBuilder/1.0)" },
     });
 
     if (!response.ok) {
@@ -28,7 +58,6 @@ exports.handler = async function (event) {
     const html = await response.text();
 
     const get = (property) => {
-      // Match og:property or name=property meta tags
       const patterns = [
         new RegExp(`<meta[^>]+property=["']${property}["'][^>]+content=["']([^"']+)["']`, "i"),
         new RegExp(`<meta[^>]+content=["']([^"']+)["'][^>]+property=["']${property}["']`, "i"),
@@ -41,7 +70,6 @@ exports.handler = async function (event) {
       return null;
     };
 
-    // Fallback title from <title> tag
     const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
     const fallbackTitle = titleMatch ? titleMatch[1].trim() : null;
 
