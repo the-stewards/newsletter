@@ -24,7 +24,7 @@ async function claude(prompt, maxTokens = 800) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model: "claude-opus-4-5",
+        model: "claude-sonnet-4-20250514",
         max_tokens: maxTokens,
         messages: [{ role: "user", content: prompt }],
       }),
@@ -42,25 +42,17 @@ async function claude(prompt, maxTokens = 800) {
   }
 }
 
-// ── OG IMAGE FETCHER via Claude web_search ───────────────────────────────────
-// Claude can browse URLs — we ask it to return the OG meta tags as JSON
+// ── OG IMAGE FETCHER via Netlify server-side scraper ────────────────────────
 async function fetchOG(url) {
   if (!url || !url.startsWith("http")) return null;
   try {
-    const result = await claude(
-      `Use your web browsing capability to visit this URL: ${url}
-
-Then return ONLY a raw JSON object (no markdown, no explanation, no code fences) with exactly these fields from the page's HTML meta tags:
-{"ogImage":"<og:image content>","ogTitle":"<og:title content>","ogDescription":"<og:description content>"}
-
-If a field is not found, use null. Return nothing except the JSON object.`,
-      400
-    );
-    const clean = result.replace(/```json|```/g, "").trim();
-    // Find the JSON object even if there's extra text
-    const match = clean.match(/\{[\s\S]*\}/);
-    if (!match) return null;
-    return JSON.parse(match[0]);
+    const r = await fetch("/.netlify/functions/fetchog", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (!r.ok) return null;
+    return await r.json();
   } catch (e) {
     console.error("fetchOG error:", e);
     return null;
