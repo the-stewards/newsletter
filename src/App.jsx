@@ -496,7 +496,7 @@ Return only the paragraph — no labels, no intro.`);
         <Field label="URL (if applicable)">
           <div style={{ display: "flex", gap: 6 }}>
             <div style={{ flex: 1 }}><Inp value={data.worthUrl || ""} onChange={v => u("worthUrl", v)} placeholder="https://" /></div>
-            <FetchBtn url={data.worthUrl} onResult={og => { if (og.ogTitle && !data.worthTitle) u("worthTitle", og.ogTitle); }} />
+            <FetchBtn url={data.worthUrl} onResult={og => { if (og.ogTitle && !data.worthTitle) u("worthTitle", og.ogTitle); if (og.ogDescription && !data.worthWhy) u("worthWhy", og.ogDescription); }} />
           </div>
         </Field>
         <div style={{ marginBottom: 10 }}>
