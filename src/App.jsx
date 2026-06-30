@@ -493,7 +493,12 @@ Return only the paragraph — no labels, no intro.`);
         <Field label="Type"><Sel value={data.worthType || "Podcast"} onChange={v => u("worthType", v)} options={WORTH_TYPES} /></Field>
         <Field label="Title / Name"><Inp value={data.worthTitle || ""} onChange={v => u("worthTitle", v)} placeholder="Title or name" /></Field>
         <Field label="Why it caught your eye"><Inp value={data.worthWhy || ""} onChange={v => u("worthWhy", v)} placeholder="One line — be specific" /></Field>
-        <Field label="URL (if applicable)"><Inp value={data.worthUrl || ""} onChange={v => u("worthUrl", v)} placeholder="https://" /></Field>
+        <Field label="URL (if applicable)">
+          <div style={{ display: "flex", gap: 6 }}>
+            <div style={{ flex: 1 }}><Inp value={data.worthUrl || ""} onChange={v => u("worthUrl", v)} placeholder="https://" /></div>
+            <FetchBtn url={data.worthUrl} onResult={og => { if (og.ogTitle && !data.worthTitle) u("worthTitle", og.ogTitle); }} />
+          </div>
+        </Field>
         <div style={{ marginBottom: 10 }}>
           <AIBtn onClick={writeWorth} loading={worthLoading} label="✍️ Write the copy for me" />
         </div>
